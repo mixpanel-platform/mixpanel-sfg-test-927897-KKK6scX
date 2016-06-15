@@ -7,44 +7,36 @@
     <script src="https://cdn.mxpnl.com/libs/mixpanel-platform/build/mixpanel-platform.v0.latest.min.js"></script>
   </head>
   <body class="mixpanel-platform-body">
-    <div class="mixpanel-platform-section">
-      <div id="eventSelect" style="float: left;"></div>
-      <div id="by" class="mixpanel-platform-label" style="margin-left: 10px; display: none;">by</div>
-      <div id="propSelect" style="float: left;"></div>
-      <div id="dateSelect" style="float: right;"></div>
-      <div style="clear: both;"></div>
-      <div id="graph"></div>
-    </div>
-    <div id="table"></div>
     <script>
-      var eventSelect = $('#eventSelect').MPEventSelect();
-      var propSelect  = $('#propSelect').MPPropertySelect();
-      var dateSelect  = $('#dateSelect').MPDatepicker();
-      var eventGraph  = $('#graph').MPChart({chartType: 'line'});
-      var eventTable  = $('#table').MPTable({
-        showPercentages: true,
-        firstColHeader: 'Event'
+      var eventName = 'Order Complete';                         // replace with event name of your choice
+      var $dau = MP.api.segment(eventName, '$city', { // use segment query on eventName, and segment the data by country
+        from: moment().subtract(90, 'days'),                    // 'from' date should be one month ago
+        to: moment().subtract(1, 'days'),                       // 'to' date should be yesterday; partial data for today impacts DAU more than it does MAU
+        unit: 'day',                                            // we want the number of button clicks for each day of the month
+        type: 'unique'                                          // daily counts should be unique; multiple clicks by the same person in one day should be counted only once
       });
-
-      var runQuery = function() {
-        var eventName = eventSelect.MPEventSelect('value'),
-            propName  = propSelect.MPPropertySelect('value'),
-            dateRange = dateSelect.MPDatepicker('value');
-
-        if (eventName) {
-          MP.api.segment(eventName, propName, dateRange).done(function(results) {
-            eventGraph.MPChart('setData', results);
-            eventTable.MPTable('setData', results);
-          });
-        }
-      };
-      eventSelect.on('change', function(e, eventName) {
-        propSelect.MPPropertySelect('setEvent', eventName);
-        $("#by").show();
-        runQuery();
+      var $mau = MP.api.segment(eventName, '$city', { // use segment query on eventName, and segment the data by country
+        from: moment().subtract(90, 'days'),                    // 'from' date should be one month ago
+        to: moment().subtract(1, 'days'),                       // 'to' date should be yesterday; partial data for today impacts DAU more than it does MAU
+        unit: 'month',                                          // we want the number of button clicks that occured over the month
+        type: 'unique'                                          // multiple clicks by the same person during any point in the month should be counted only once
       });
-      propSelect.on('change', runQuery);
-      dateSelect.on('change', runQuery);
+      $.when($dau, $mau).done(function(dau, mau) {
+        // average the DAU values and divide them by the MAU ones
+        // (we sum the MAU in the case where the 30 days spans over two months)
+        var dauMau = dau.avg().divide(mau.sum()).values();
+        var sortedData = _.chain(dauMau) // enables function chaining
+          .pairs()                       // convert each object to an array for sorting
+          .sortBy(function(dauMau) {     // sort by the dau/mau value in descending order
+            return -dauMau[1];
+          })
+          .object()                      // convert each array back to an object
+          .value();                      // end the chaining and return the value
+        $('<div></div>').appendTo('body').MPChart({ // create chart
+          chartType: 'bar',                         // make it a bar chart
+          data: sortedData                          // set its data
+        });
+      });
     </script>
   </body>
 </html>
