@@ -24,7 +24,7 @@
       $.when($dau, $mau).done(function(dau, mau) {
         console.log(dau.values());
         console.log(mau.values());
-        console.log(dav.avg().values());
+        console.log(dau.avg().values());
         console.log(mau.sum().values());
         // average the DAU values and divide them by the MAU ones
         // (we sum the MAU in the case where the 30 days spans over two months)
