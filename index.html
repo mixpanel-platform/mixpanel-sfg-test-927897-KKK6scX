@@ -10,18 +10,22 @@
     <script>
       var eventName = 'Order Complete';                         // replace with event name of your choice
       var $dau = MP.api.segment(eventName, '$city', { // use segment query on eventName, and segment the data by country
-        from: moment().subtract(90, 'days'),                    // 'from' date should be one month ago
-        to: moment().subtract(1, 'days'),                       // 'to' date should be yesterday; partial data for today impacts DAU more than it does MAU
+        from: moment().subtract(60, 'days'),                    // 'from' date should be one month ago
+        to: moment().subtract(31, 'days'),                       // 'to' date should be yesterday; partial data for today impacts DAU more than it does MAU
         unit: 'day',                                            // we want the number of button clicks for each day of the month
         type: 'unique'                                          // daily counts should be unique; multiple clicks by the same person in one day should be counted only once
       });
       var $mau = MP.api.segment(eventName, '$city', { // use segment query on eventName, and segment the data by country
-        from: moment().subtract(90, 'days'),                    // 'from' date should be one month ago
-        to: moment().subtract(1, 'days'),                       // 'to' date should be yesterday; partial data for today impacts DAU more than it does MAU
+        from: moment().subtract(60, 'days'),                    // 'from' date should be one month ago
+        to: moment().subtract(31, 'days'),                       // 'to' date should be yesterday; partial data for today impacts DAU more than it does MAU
         unit: 'month',                                          // we want the number of button clicks that occured over the month
         type: 'unique'                                          // multiple clicks by the same person during any point in the month should be counted only once
       });
       $.when($dau, $mau).done(function(dau, mau) {
+        console.log(dau.values());
+        console.log(mau.values());
+        console.log(dav.avg().values());
+        console.log(mau.sum().values());
         // average the DAU values and divide them by the MAU ones
         // (we sum the MAU in the case where the 30 days spans over two months)
         var dauMau = dau.avg().divide(mau.sum()).values();
